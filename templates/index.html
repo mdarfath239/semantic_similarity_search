@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<!-- ===== HERO ===== -->
+<section class="hero-section py-5">
+  <div class="container text-center">
+    <div class="hero-badge mb-3">
+      <i class="fa-solid fa-wand-magic-sparkles me-1"></i> AI-Powered Semantic Search
+    </div>
+    <h1 class="hero-title mb-3">
+      Find Documents by <span class="text-primary">Meaning</span>,<br class="d-none d-md-block" /> Not Just Keywords
+    </h1>
+    <p class="hero-subtitle text-muted mx-auto mb-0">
+      A Word2Vec semantic similarity engine trained on the
+      <strong>20 Newsgroups</strong> corpus — 18 227 indexed documents,
+      100-dimensional embeddings, cosine similarity ranking.
+    </p>
+  </div>
+</section>
+
+<!-- ===== SEARCH PANEL ===== -->
+<section class="search-section pb-5">
+  <div class="container">
+    <div class="search-card card shadow-sm border-0 mx-auto">
+      <div class="card-body p-4 p-md-5">
+
+        <!-- Input row -->
+        <div class="input-group input-group-lg search-input-group mb-3">
+          <span class="input-group-text bg-white border-end-0">
+            <i class="fa-solid fa-magnifying-glass text-muted"></i>
+          </span>
+          <input
+            id="search-input"
+            type="text"
+            class="form-control ps-0"
+            placeholder="e.g. computer graphics and image processing"
+            autocomplete="off"
+            maxlength="2000"
+            aria-label="Search query"
+          />
+          <button
+            id="clear-btn"
+            class="btn-clear"
+            type="button"
+            title="Clear query"
+            style="display:none"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Options row -->
+        <div class="d-flex flex-wrap align-items-center gap-3 mb-4 search-controls">
+          <div class="d-flex align-items-center gap-2">
+            <label for="top-n-select" class="form-label mb-0 text-muted small fw-medium">Results:</label>
+            <select id="top-n-select" class="form-select form-select-sm form-select-custom w-auto">
+              <option value="3">3</option>
+              <option value="5" selected>5</option>
+              <option value="10">10</option>
+              <option value="15">15</option>
+              <option value="20">20</option>
+            </select>
+          </div>
+
+          <!-- Category filter (populated after first search) -->
+          <div class="d-flex align-items-center gap-2" id="category-filter-wrap" style="display:none !important">
+            <label for="category-filter" class="form-label mb-0 text-muted small fw-medium">Category:</label>
+            <select id="category-filter" class="form-select form-select-sm form-select-custom w-auto">
+              <option value="">All categories</option>
+            </select>
+          </div>
+
+          <!-- Score threshold -->
+          <div class="d-flex align-items-center gap-2 score-slider-wrap">
+            <label for="score-threshold" class="form-label mb-0 text-muted small fw-medium text-nowrap">
+              Min score: <span id="threshold-label" class="fw-bold text-primary">0%</span>
+            </label>
+            <input
+              id="score-threshold"
+              type="range"
+              class="form-range"
+              min="0" max="100" step="5" value="0"
+              style="width:120px"
+            />
+          </div>
+
+          <button id="search-btn" class="btn btn-search ms-auto px-4">
+            <i class="fa-solid fa-magnifying-glass me-2"></i>Search
+          </button>
+        </div>
+
+        <!-- Suggestions -->
+        <div id="suggestions-row">
+          <span class="text-muted small me-2">Try:</span>
+          {% set suggestions = [
+            "computer graphics and image processing",
+            "space exploration and NASA missions",
+            "religion and ethics in society",
+            "encryption and internet security",
+            "electric vehicles and energy"
+          ] %}
+          {% for s in suggestions %}
+          <button class="btn btn-suggestion suggestion-chip" data-query="{{ s }}">{{ s }}</button>
+          {% endfor %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== STATS STRIP ===== -->
+<section class="stats-section pb-5" id="stats-strip" style="display:none">
+  <div class="container">
+    <div class="stats-bar card border-0 shadow-sm p-3 p-md-4">
+      <div class="row g-0 text-center">
+        <div class="stat-item col-6 col-md-2">
+          <div class="stat-label">Query</div>
+          <div class="stat-value text-truncate" id="stat-query">—</div>
+        </div>
+        <div class="stat-item col-6 col-md-2">
+          <div class="stat-label">Results shown</div>
+          <div class="stat-value" id="stat-count">—</div>
+        </div>
+        <div class="stat-item col-6 col-md-2">
+          <div class="stat-label">Search time</div>
+          <div class="stat-value" id="stat-time">—</div>
+        </div>
+        <div class="stat-item col-6 col-md-2">
+          <div class="stat-label">Model</div>
+          <div class="stat-value">Word2Vec</div>
+        </div>
+        <div class="stat-item col-6 col-md-2">
+          <div class="stat-label">Dimensions</div>
+          <div class="stat-value">100</div>
+        </div>
+        <div class="stat-item col-6 col-md-2">
+          <div class="stat-label">Indexed docs</div>
+          <div class="stat-value">18 227</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== RESULTS ===== -->
+<section class="results-section pb-5">
+  <div class="container">
+
+    <!-- Loading -->
+    <div id="loading-indicator" class="text-center py-5" style="display:none">
+      <div class="spinner-border text-primary mb-3" role="status" style="width:3rem;height:3rem">
+        <span class="visually-hidden">Searching…</span>
+      </div>
+      <p class="text-muted">Running semantic similarity search…</p>
+    </div>
+
+    <!-- Error banner -->
+    <div id="error-banner" class="alert alert-danger alert-dismissible fade show" style="display:none" role="alert">
+      <i class="fa-solid fa-circle-exclamation me-2"></i>
+      <span id="error-message"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Results header -->
+    <div id="results-header" style="display:none" class="d-flex align-items-center justify-content-between mb-3">
+      <h5 class="mb-0 fw-semibold">
+        <i class="fa-solid fa-list-check me-2 text-primary"></i>
+        Search Results
+        <span class="badge bg-primary ms-2" id="results-count-badge">0</span>
+      </h5>
+      <div class="d-flex gap-2">
+        <span class="text-muted small" id="results-filter-note"></span>
+      </div>
+    </div>
+
+    <!-- Result cards container -->
+    <div id="results-container"></div>
+
+    <!-- No-results state -->
+    <div id="no-results" class="text-center py-5" style="display:none">
+      <i class="fa-solid fa-face-meh fa-3x text-muted mb-3"></i>
+      <h5 class="text-muted">No matching documents found</h5>
+      <p class="text-muted small">
+        The query words may not be in the model's vocabulary.
+        Try rephrasing your query using different or simpler words.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===== SEARCH HISTORY ===== -->
+<section class="history-section pb-5" id="history-section" style="display:none">
+  <div class="container">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-bottom d-flex align-items-center justify-content-between py-3">
+        <h6 class="mb-0 fw-semibold">
+          <i class="fa-solid fa-clock-rotate-left me-2 text-secondary"></i>Recent Searches
+        </h6>
+        <button id="clear-history-btn" class="btn btn-sm btn-outline-danger">
+          <i class="fa-solid fa-trash me-1"></i>Clear
+        </button>
+      </div>
+      <div class="card-body p-0">
+        <ul id="history-list" class="list-group list-group-flush"></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== MODEL INFO STRIP ===== -->
+<section class="model-info-section py-5 bg-light border-top border-bottom">
+  <div class="container">
+    <h5 class="fw-semibold mb-4 text-center">
+      <i class="fa-solid fa-microchip me-2 text-primary"></i>How It Works
+    </h5>
+    <div class="row g-4 text-center">
+      <div class="col-6 col-md-3">
+        <div class="info-step">
+          <div class="info-icon bg-primary-soft text-primary mb-2">
+            <i class="fa-solid fa-keyboard fa-lg"></i>
+          </div>
+          <div class="fw-medium small">1. Query Input</div>
+          <div class="text-muted" style="font-size:.8rem">Natural-language text</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="info-step">
+          <div class="info-icon bg-purple-soft text-purple mb-2">
+            <i class="fa-solid fa-code-branch fa-lg"></i>
+          </div>
+          <div class="fw-medium small">2. Tokenisation</div>
+          <div class="text-muted" style="font-size:.8rem">Lowercasing, stopword removal</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="info-step">
+          <div class="info-icon bg-teal-soft text-teal mb-2">
+            <i class="fa-solid fa-vector-square fa-lg"></i>
+          </div>
+          <div class="fw-medium small">3. Embedding</div>
+          <div class="text-muted" style="font-size:.8rem">Word2Vec → 100-dim vector</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="info-step">
+          <div class="info-icon bg-orange-soft text-orange mb-2">
+            <i class="fa-solid fa-ranking-star fa-lg"></i>
+          </div>
+          <div class="fw-medium small">4. Cosine Ranking</div>
+          <div class="text-muted" style="font-size:.8rem">Top-N similar documents</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+

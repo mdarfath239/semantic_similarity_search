@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <!-- Page header -->
+  <div class="mb-5">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item active">About</li>
+      </ol>
+    </nav>
+    <h2 class="fw-bold mb-1">
+      <i class="fa-solid fa-circle-info me-2 text-primary"></i>About This Project
+    </h2>
+    <p class="text-muted">Architecture, model details, and design decisions.</p>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- Left column -->
+    <div class="col-lg-8">
+
+      <!-- Project overview -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <h5 class="fw-semibold mb-3">
+            <i class="fa-solid fa-layer-group me-2 text-primary"></i>Project Overview
+          </h5>
+          <p>
+            <strong>Semantic Similarity Search</strong> is an NLP-powered document retrieval
+            system that understands the <em>meaning</em> of a user's query rather than
+            relying on exact keyword matching.
+          </p>
+          <p class="mb-0">
+            The system embeds both the query and each indexed document as dense
+            numerical vectors using a pre-trained <strong>Word2Vec</strong> model,
+            then ranks documents by their <strong>cosine similarity</strong> to the query vector.
+          </p>
+        </div>
+      </div>
+
+      <!-- How it works -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <h5 class="fw-semibold mb-3">
+            <i class="fa-solid fa-gears me-2 text-primary"></i>How It Works
+          </h5>
+          <ol class="about-steps">
+            <li>
+              <strong>Preprocessing</strong> — The query is lowercased, URLs/emails/digits
+              are removed, and it is tokenised with NLTK's <code>wordpunct_tokenize</code>.
+              English stopwords are removed (negations preserved).
+            </li>
+            <li>
+              <strong>Embedding</strong> — Each token is looked up in the Word2Vec vocabulary.
+              The token vectors are averaged into a single 100-dimensional query vector.
+            </li>
+            <li>
+              <strong>Similarity search</strong> — Cosine similarity is computed between
+              the query vector and all 18 227 pre-computed document vectors.
+            </li>
+            <li>
+              <strong>Ranking</strong> — Documents are sorted by similarity score
+              (descending) and the top N results are returned.
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Architecture -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <h5 class="fw-semibold mb-3">
+            <i class="fa-solid fa-sitemap me-2 text-primary"></i>Application Architecture
+          </h5>
+          <pre class="architecture-tree rounded p-3 small bg-light">semantic_similarity_search/
+│
+├── models/                   ← Pre-trained model artifacts
+│   ├── word2vec_model.model
+│   ├── search_document_vectors.pkl
+│   └── search_document_metadata.pkl
+│
+├── src/                      ← Existing NLP inference layer
+│   ├── preprocessing.py      ← Text cleaning &amp; tokenisation
+│   └── inference.py          ← semantic_search() function
+│
+├── app/                      ← Flask web layer
+│   ├── __init__.py           ← Application factory
+│   ├── routes.py             ← HTTP route handlers
+│   └── services.py           ← Business logic &amp; validation
+│
+├── templates/                ← Jinja2 HTML templates
+├── static/                   ← CSS, JS, images
+├── tests/                    ← Unit &amp; integration tests
+└── app.py                    ← Server entry point</pre>
+        </div>
+      </div>
+
+      <!-- Limitations -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <h5 class="fw-semibold mb-3">
+            <i class="fa-solid fa-triangle-exclamation me-2 text-warning"></i>Limitations
+          </h5>
+          <ul class="mb-0">
+            <li>Queries containing words absent from the Word2Vec vocabulary return no results.</li>
+            <li>The model is trained only on the 20 Newsgroups corpus — out-of-domain queries may produce low-quality results.</li>
+            <li>Averaging word vectors loses word-order information.</li>
+            <li>Cosine similarity is not a probability; a high score does not guarantee relevance.</li>
+            <li>The application is a portfolio demonstration and is not hardened for public production deployment.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right column: model stats -->
+    <div class="col-lg-4">
+
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3 text-muted text-uppercase" style="letter-spacing:.05em;font-size:.75rem">
+            Model Details
+          </h6>
+          <ul class="list-unstyled model-stat-list">
+            <li>
+              <span class="text-muted small">Algorithm</span>
+              <span class="fw-medium">Word2Vec (CBOW / Skip-gram)</span>
+            </li>
+            <li>
+              <span class="text-muted small">Embedding dimensions</span>
+              <span class="fw-medium">100</span>
+            </li>
+            <li>
+              <span class="text-muted small">Similarity metric</span>
+              <span class="fw-medium">Cosine Similarity</span>
+            </li>
+            <li>
+              <span class="text-muted small">Dataset</span>
+              <span class="fw-medium">20 Newsgroups</span>
+            </li>
+            <li>
+              <span class="text-muted small">Total indexed documents</span>
+              <span class="fw-medium">18 227</span>
+            </li>
+            <li>
+              <span class="text-muted small">Library</span>
+              <span class="fw-medium">Gensim</span>
+            </li>
+            <li>
+              <span class="text-muted small">Training environment</span>
+              <span class="fw-medium">Google Colab</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3 text-muted text-uppercase" style="letter-spacing:.05em;font-size:.75rem">
+            Technology Stack
+          </h6>
+          <div class="d-flex flex-wrap gap-2">
+            {% for tech in ["Python 3.10", "Flask 3", "Gensim", "NumPy", "Pandas",
+                            "scikit-learn", "NLTK", "Bootstrap 5", "Font Awesome"] %}
+            <span class="badge tech-badge">{{ tech }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3 text-muted text-uppercase" style="letter-spacing:.05em;font-size:.75rem">
+            20 Newsgroups Categories
+          </h6>
+          <div class="d-flex flex-wrap gap-1">
+            {% for cat in [
+              "alt.atheism","comp.graphics","comp.os.ms-windows.misc",
+              "comp.sys.ibm.pc.hardware","comp.sys.mac.hardware","comp.windows.x",
+              "misc.forsale","rec.autos","rec.motorcycles","rec.sport.baseball",
+              "rec.sport.hockey","sci.crypt","sci.electronics","sci.med","sci.space",
+              "soc.religion.christian","talk.politics.guns","talk.politics.mideast",
+              "talk.politics.misc","talk.religion.misc"
+            ] %}
+            <span class="badge bg-light text-dark border small" style="font-size:.7rem">{{ cat }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
